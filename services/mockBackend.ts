@@ -52,8 +52,7 @@ export const loginUser = async (email: string, password: string): Promise<User> 
   
   const users = getUsers();
   
-  // Robust lookup: Check all stored users and compare emails case-insensitively
-  // This handles cases where a user might have been saved with Capitals previously
+  // Robust lookup
   const user = Object.values(users).find(u => u.email.toLowerCase().trim() === cleanEmail);
   
   if (user) {
@@ -71,9 +70,8 @@ export const loginUser = async (email: string, password: string): Promise<User> 
     if (typeof user.btcBalance === 'undefined') { user.btcBalance = 0; updated = true; }
     if (!user.referralCode) { user.referralCode = generateReferralCode(); updated = true; }
     
-    // Ensure Admin UID is consistent if email matches, even if stored differently
+    // Ensure Admin UID is consistent
     if (user.email.toLowerCase() === 'cryptodrop077@gmail.com' && user.uid !== 'uid3026') {
-        // Migration fix for admin if UID was wrong
         const oldUid = user.uid;
         user.uid = 'uid3026';
         delete users[oldUid];
@@ -107,40 +105,29 @@ export const registerUser = async (email: string, password: string, referralCode
   let referredByUid = undefined;
   if (referralCode) {
     const normalizedRef = referralCode.trim().toUpperCase();
-    // Use .find to ignore case when matching
     const referrer = Object.values(users).find(u => u.referralCode?.toUpperCase() === normalizedRef);
     
     if (referrer) {
       referredByUid = referrer.uid;
       referrer.referralCount = (referrer.referralCount || 0) + 1;
-      users[referrer.uid] = referrer; // Mark for save
+      users[referrer.uid] = referrer; // Update referrer in memory
     }
   }
 
   // UID Generation Logic
   let newUid = generateSimpleUid();
   
-  // SPECIAL ADMIN LOGIC: If email is cryptodrop077@gmail.com, force uid3026
   if (cleanEmail === 'cryptodrop077@gmail.com') {
       newUid = 'uid3026';
   }
 
-  // Ensure uniqueness
   while (users[newUid] && newUid !== 'uid3026') { 
     newUid = generateSimpleUid();
   }
   
-  // Force overwrite for admin ID if registering with admin email
-  if (newUid === 'uid3026') {
-      // If someone else somehow has this ID (unlikely), they will be overwritten or we assume it's the admin re-registering
-  } else if (users[newUid]) {
-      // Collision for normal user
-      newUid = generateSimpleUid();
-  }
-
   const newUser: any = {
     uid: newUid,
-    email: cleanEmail, // Store lowercase
+    email: cleanEmail,
     password, 
     usdtBalance: 0,
     btcBalance: 0,
@@ -151,11 +138,12 @@ export const registerUser = async (email: string, password: string, referralCode
     referredBy: referredByUid,
     referralCount: 0,
     referralEarnings: 0,
-    isBlocked: false
+    isBlocked: false,
+    joinDate: Date.now() // Added for Member List
   };
 
   users[newUser.uid] = newUser;
-  saveUsers(users);
+  saveUsers(users); // Save everything (new user + updated referrer)
   localStorage.setItem(CURRENT_USER_KEY, newUser.uid);
   return newUser;
 };
@@ -176,6 +164,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
       return null;
   }
   return user;
+};
+
+// --- Helper for Team View ---
+export const getReferrals = (uid: string) => {
+    const users = getUsers();
+    return Object.values(users).filter(u => u.referredBy === uid);
 };
 
 // --- Password Management ---
@@ -203,7 +197,7 @@ export const resetPassword = async (email: string, newPass: string) => {
     saveUsers(users);
 };
 
-// --- Transaction System (New) ---
+// --- Transaction System ---
 
 export const getUserTransactions = (uid: string): Transaction[] => {
   const allTxs = getTransactions();
@@ -228,7 +222,6 @@ export const createTransaction = async (
 
   if (type === 'withdraw') {
     if (user.usdtBalance < amount) throw new Error('Insufficient balance');
-    // Deduct immediately for withdrawal request (escrow)
     user.usdtBalance -= amount;
     saveUsers(users);
   }
@@ -248,12 +241,10 @@ export const createTransaction = async (
   const txs = getTransactions();
   txs.push(newTx);
   saveTransactions(txs);
-  
   return newTx;
 };
 
 export const processTransaction = async (adminUid: string, txId: string, action: 'approve' | 'reject'): Promise<void> => {
-  // Security Check
   if (adminUid !== 'uid3026') throw new Error('Access Denied: Super Admin Only');
 
   const txs = getTransactions();
@@ -261,23 +252,14 @@ export const processTransaction = async (adminUid: string, txId: string, action:
   if (txIndex === -1) throw new Error('Transaction not found');
   
   const tx = txs[txIndex];
-  
-  // NOTE: We allow re-processing if needed (debugging), but typically only pending
-  // if (tx.status !== 'pending') throw new Error('Transaction already processed');
-
   const users = getUsers();
   const user = users[tx.uid];
   
   if (action === 'approve') {
-    if (tx.status === 'approved') return; // Already done
-
-    // If it was rejected previously (for some reason), we might need to deduct again? 
-    // For simplicity, we assume we only move from pending -> approved/rejected.
-    
+    if (tx.status === 'approved') return;
     tx.status = 'approved';
     
     if (tx.type === 'deposit' && user) {
-       // Credit funds
        user.usdtBalance += tx.amount;
        
        // Referral Commission Logic (5%)
@@ -288,25 +270,18 @@ export const processTransaction = async (adminUid: string, txId: string, action:
           referrer.referralEarnings = (referrer.referralEarnings || 0) + commission;
        }
     }
-    // For withdraw approve: funds already deducted, just mark approved
-    
   } else {
-    // REJECT
-    if (tx.status === 'rejected') return; // Already done
-
+    if (tx.status === 'rejected') return;
     tx.status = 'rejected';
     
     if (tx.type === 'withdraw' && user) {
-      // Refund user funds if rejected
       user.usdtBalance += tx.amount;
     }
   }
 
-  // Update Array explicitly
   txs[txIndex] = tx;
   saveTransactions(txs);
   
-  // Save users if modified
   if (user) {
       users[tx.uid] = user;
       saveUsers(users);
@@ -323,15 +298,11 @@ export const upgradeUserVip = async (uid: string, newLevel: number): Promise<Use
   const plan = VIP_PLANS.find(p => p.level === newLevel);
   if (!plan) throw new Error('Invalid plan');
 
-  // ALLOW JUMP: Removed sequential check. Users can buy any plan higher than current.
   if (user.vipLevel >= newLevel) throw new Error('You already have this level or higher.');
-  
   if (user.usdtBalance < plan.cost) throw new Error(`Insufficient USDT. Need ${plan.cost}.`);
 
   user.usdtBalance -= plan.cost;
   user.vipLevel = newLevel;
-  
-  // RESET MINING TIMER: Enforce 24-hour wait after purchasing a plan
   user.lastMiningTime = Date.now();
   
   saveUsers(users);
@@ -426,7 +397,6 @@ export const adminSetPlan = async (targetUid: string, level: number) => {
     if (!user) throw new Error("User not found");
     
     user.vipLevel = level;
-    // RESET MINING TIMER: Enforce 24-hour wait if Admin upgrades the plan
     user.lastMiningTime = Date.now();
 
     saveUsers(users);

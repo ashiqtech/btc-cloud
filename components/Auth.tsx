@@ -29,7 +29,7 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     const params = new URLSearchParams(window.location.search);
     let ref = params.get('ref');
 
-    // 2. Check Hash Path for "free/ref/CODE" or "crypto_mine_pro/ref/CODE"
+    // 2. Check Hash Path for "cryptominerpro/ref/CODE"
     if (!ref) {
         const hash = window.location.hash;
         // Regex to find /ref/CODE in the hash, case insensitive
@@ -58,7 +58,6 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
         throw new Error("Passwords do not match");
       }
 
-      // Check for user blocking is inside loginUser service
       const user = viewState === 'LOGIN'
         ? await loginUser(trimmedEmail, trimmedPass)
         : await registerUser(trimmedEmail, trimmedPass, referralCode.trim());
@@ -79,7 +78,6 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
 
       try {
           if (fpStep === 1) {
-              // Simulate sending code
               await new Promise(r => setTimeout(r, 1000));
               const code = Math.floor(100000 + Math.random() * 900000).toString();
               setGeneratedCode(code);
@@ -104,7 +102,6 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
       }
   };
 
-  // Render Forgot Password View
   if (viewState === 'FORGOT') {
       return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800">
@@ -171,7 +168,6 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
       );
   }
 
-  // Render Login/Register View
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800">
       <div className="w-full max-w-sm">

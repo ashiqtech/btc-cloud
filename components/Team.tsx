@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, AppView } from '../types';
+import { getReferrals } from '../services/mockBackend';
 
 interface TeamProps {
   user: User;
@@ -8,9 +9,14 @@ interface TeamProps {
 
 export const Team: React.FC<TeamProps> = ({ user, setView }) => {
   const [copyMsg, setCopyMsg] = useState('');
+  const [referrals, setReferrals] = useState<any[]>([]);
   
-  // Updated to 'free/ref' format as requested
-  const referralLink = `${window.location.origin}/#/free/ref/${user.referralCode}`;
+  // Use cryptominerpro/ref as requested
+  const referralLink = `${window.location.origin}/#/cryptominerpro/ref/${user.referralCode}`;
+
+  useEffect(() => {
+    setReferrals(getReferrals(user.uid));
+  }, [user.uid]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink);
@@ -69,27 +75,39 @@ export const Team: React.FC<TeamProps> = ({ user, setView }) => {
         </div>
       </div>
 
-      {/* Rules Section */}
-      <div className="bg-dark-900/50 rounded-xl p-5 border border-dark-800">
-        <h3 className="text-sm font-bold text-gray-300 mb-3">Referral Rules</h3>
-        <ul className="space-y-2">
-            <li className="flex gap-3 items-start text-xs text-gray-400">
-                <span className="bg-dark-800 text-brand-500 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">1</span>
-                <span>Send your unique invitation link to your friends.</span>
-            </li>
-            <li className="flex gap-3 items-start text-xs text-gray-400">
-                <span className="bg-dark-800 text-brand-500 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">2</span>
-                <span>When they register using your link, they become your Team Member (Tier 1).</span>
-            </li>
-            <li className="flex gap-3 items-start text-xs text-gray-400">
-                <span className="bg-dark-800 text-brand-500 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">3</span>
-                <span>You receive <span className="text-white font-bold">5% instant commission</span> on every deposit they make.</span>
-            </li>
-             <li className="flex gap-3 items-start text-xs text-gray-400">
-                <span className="bg-dark-800 text-brand-500 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">4</span>
-                <span>Commissions are credited directly to your USDT balance.</span>
-            </li>
-        </ul>
+      {/* Team Member List */}
+      <div className="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
+          <div className="p-4 border-b border-dark-800">
+              <h3 className="text-sm font-bold text-white">Member List (Tier 1)</h3>
+          </div>
+          <div className="max-h-[300px] overflow-y-auto">
+              {referrals.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 text-xs">
+                      No team members yet.
+                  </div>
+              ) : (
+                  <div className="divide-y divide-dark-800">
+                      {referrals.map((member: any) => (
+                          <div key={member.uid} className="p-3 flex justify-between items-center hover:bg-dark-800/50">
+                              <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-xs font-bold text-gray-300">
+                                      {member.email.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                      <p className="text-xs text-white font-mono">{member.uid}</p>
+                                      <p className="text-[10px] text-gray-500">Joined: {member.joinDate ? new Date(member.joinDate).toLocaleDateString() : 'N/A'}</p>
+                                  </div>
+                              </div>
+                              <div className="text-right">
+                                  <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${member.vipLevel > 0 ? 'bg-brand-900 text-brand-400' : 'bg-gray-800 text-gray-400'}`}>
+                                      {member.vipLevel > 0 ? `VIP ${member.vipLevel}` : 'Free'}
+                                  </span>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              )}
+          </div>
       </div>
 
     </div>
