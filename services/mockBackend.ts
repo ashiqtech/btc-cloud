@@ -103,14 +103,16 @@ export const registerUser = async (email: string, password: string, referralCode
 
   // Handle Referral with Robust Case-Insensitivity
   let referredByUid = undefined;
+  
   if (referralCode) {
     const normalizedRef = referralCode.trim().toUpperCase();
-    const referrer = Object.values(users).find(u => u.referralCode?.toUpperCase() === normalizedRef);
+    const referrer = Object.values(users).find(u => (u.referralCode || '').toUpperCase() === normalizedRef);
     
     if (referrer) {
       referredByUid = referrer.uid;
+      // Explicitly update referrer count
       referrer.referralCount = (referrer.referralCount || 0) + 1;
-      users[referrer.uid] = referrer; // Update referrer in memory
+      users[referrer.uid] = referrer;
     }
   }
 
@@ -268,6 +270,8 @@ export const processTransaction = async (adminUid: string, txId: string, action:
           const commission = tx.amount * 0.05;
           referrer.usdtBalance += commission;
           referrer.referralEarnings = (referrer.referralEarnings || 0) + commission;
+          // Important: Save the referrer update
+          users[referrer.uid] = referrer;
        }
     }
   } else {
@@ -425,5 +429,33 @@ export const adminDeleteUser = async (targetUid: string) => {
     delete users[targetUid];
     saveUsers(users);
 }
+
+export const adminManualLinkReferrer = async (childUid: string, parentReferralCode: string) => {
+    const users = getUsers();
+    const child = users[childUid];
+    if (!child) throw new Error("User not found");
+
+    const parent = Object.values(users).find(u => (u.referralCode || '').toUpperCase() === parentReferralCode.trim().toUpperCase());
+    if (!parent) throw new Error("Invalid Referral Code");
+    
+    if (parent.uid === child.uid) throw new Error("Cannot refer self");
+
+    // Remove from old parent if exists
+    if (child.referredBy && users[child.referredBy]) {
+        const oldParent = users[child.referredBy];
+        if (oldParent.referralCount > 0) oldParent.referralCount--;
+        users[child.referredBy] = oldParent;
+    }
+
+    // Add to new parent
+    child.referredBy = parent.uid;
+    parent.referralCount = (parent.referralCount || 0) + 1;
+
+    users[child.uid] = child;
+    users[parent.uid] = parent;
+    
+    saveUsers(users);
+    return parent;
+};
 
 export const getAllUsersAdmin = () => getUsers();

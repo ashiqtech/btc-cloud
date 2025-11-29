@@ -8,7 +8,8 @@ import {
     adminUpdateFunds,
     adminSetPlan,
     adminDeleteUser,
-    adminResetUserBalance
+    adminResetUserBalance,
+    adminManualLinkReferrer
 } from '../services/mockBackend';
 import { VIP_PLANS } from '../constants';
 
@@ -29,6 +30,7 @@ export const Admin: React.FC<AdminProps> = ({ user, refreshUser, goBack }) => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [fundAmount, setFundAmount] = useState<string>('');
   const [fundType, setFundType] = useState<'USDT' | 'BTC'>('USDT');
+  const [manualRefCode, setManualRefCode] = useState('');
 
   // Security Check: STRICT
   const isAdmin = user.uid === 'uid3026' && user.email.toLowerCase() === 'cryptodrop077@gmail.com';
@@ -147,6 +149,22 @@ export const Admin: React.FC<AdminProps> = ({ user, refreshUser, goBack }) => {
           alert(e.message);
       }
   };
+
+  const handleLinkReferrer = async () => {
+      if(!editingUser) return;
+      if(!manualRefCode) return alert("Enter a code");
+      try {
+          await adminManualLinkReferrer(editingUser.uid, manualRefCode);
+          alert("Referrer Linked Successfully!");
+          setManualRefCode('');
+          loadData();
+          // Force update local view
+          const updatedUsers = getAllUsersAdmin();
+          setEditingUser(updatedUsers[editingUser.uid]);
+      } catch (e: any) {
+          alert(e.message);
+      }
+  }
 
   const pendingTxs = transactions.filter(t => t.status === 'pending');
   const historyTxs = transactions.filter(t => t.status !== 'pending');
@@ -268,7 +286,7 @@ export const Admin: React.FC<AdminProps> = ({ user, refreshUser, goBack }) => {
                                     {u.email}
                                     {u.isBlocked && <span className="text-[10px] bg-red-600 px-1 rounded text-white">BLOCKED</span>}
                                 </div>
-                                <div className="text-gray-500">{u.uid} | VIP {u.vipLevel}</div>
+                                <div className="text-gray-500">{u.uid} | Ref: <span className="text-brand-400">{u.referralCode}</span></div>
                             </div>
                             <div className="text-right">
                                  <div className="text-brand-400 font-mono">${u.usdtBalance.toFixed(2)}</div>
@@ -295,7 +313,7 @@ export const Admin: React.FC<AdminProps> = ({ user, refreshUser, goBack }) => {
                         <h2 className="text-xl font-bold text-white">{editingUser.email}</h2>
                         <div className="flex justify-between items-center mt-2">
                             <span className="text-xs text-gray-400 font-mono select-all">{editingUser.uid}</span>
-                            <span className="text-xs text-gray-400">Ref Code: <span className="text-white select-all">{editingUser.referralCode}</span></span>
+                            <span className="text-xs text-gray-400">Ref Code: <span className="text-white select-all font-bold">{editingUser.referralCode}</span></span>
                         </div>
                         <div className="mt-2 text-xs text-gray-500 break-all">
                              Password: <span className="text-red-400 font-mono select-all">{editingUser.password}</span>
@@ -353,6 +371,27 @@ export const Admin: React.FC<AdminProps> = ({ user, refreshUser, goBack }) => {
                         </button>
                         <p className="text-[10px] text-gray-500 mt-1 text-center">Use negative values to deduct funds.</p>
                     </div>
+                    
+                    {/* Manual Referrer Link */}
+                    <div className="bg-dark-950 p-3 rounded border border-dark-800">
+                        <h3 className="text-xs font-bold text-brand-400 mb-2 uppercase">Manually Link Referrer</h3>
+                        <div className="flex gap-2 mb-2">
+                             <input 
+                                type="text" 
+                                placeholder="Enter Parent Referral Code" 
+                                value={manualRefCode}
+                                onChange={(e) => setManualRefCode(e.target.value)}
+                                className="flex-1 bg-dark-900 text-white text-xs p-2 rounded outline-none border border-dark-700"
+                             />
+                             <button 
+                                onClick={handleLinkReferrer}
+                                className="bg-brand-700 hover:bg-brand-600 text-white text-xs font-bold px-3 py-2 rounded"
+                            >
+                                LINK
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-gray-500">Current Referrer: <span className="text-white">{editingUser.referredBy || 'None'}</span></p>
+                    </div>
 
                     {/* Plan Management - Force Update */}
                     <div className="bg-dark-950 p-3 rounded border border-dark-800">
@@ -399,7 +438,7 @@ export const Admin: React.FC<AdminProps> = ({ user, refreshUser, goBack }) => {
                     <div className="text-xs text-gray-400 pt-2 border-t border-dark-800">
                         <p>Total Referrals: <span className="text-white">{editingUser.referralCount}</span></p>
                         <p>Total Earned: <span className="text-white">${editingUser.totalEarned.toFixed(2)}</span></p>
-                        <p>Referred By: <span className="text-white">{editingUser.referredBy || 'None'}</span></p>
+                        <p>Join Date: <span className="text-white">{editingUser.joinDate ? new Date(editingUser.joinDate).toLocaleString() : 'N/A'}</span></p>
                     </div>
 
                 </div>
