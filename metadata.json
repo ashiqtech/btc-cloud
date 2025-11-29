@@ -1,0 +1,5 @@
+{
+  "name": "BTC Cloud Miner",
+  "description": "A high-fidelity Bitcoin mining simulation platform featuring real-time market data, VIP investment tiers, wallet management, and earnings simulation.",
+  "requestFramePermissions": []
+}
