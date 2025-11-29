@@ -5,16 +5,20 @@ import { getReferrals } from '../services/mockBackend';
 interface TeamProps {
   user: User;
   setView: (view: AppView) => void;
+  refreshUser: () => void;
 }
 
-export const Team: React.FC<TeamProps> = ({ user, setView }) => {
+export const Team: React.FC<TeamProps> = ({ user, setView, refreshUser }) => {
   const [copyMsg, setCopyMsg] = useState('');
   const [referrals, setReferrals] = useState<any[]>([]);
   
-  // Use cryptominerpro/ref as requested
-  const referralLink = `${window.location.origin}/#/cryptominerpro/ref/${user.referralCode}`;
+  // Use 'free/ref' as requested
+  const referralLink = `${window.location.origin}/#/free/ref/${user.referralCode}`;
 
   useEffect(() => {
+    // CRITICAL FIX: Refresh user data immediately when entering Team view
+    // This ensures 'user.referralCount' and 'user.referralEarnings' are up to date
+    refreshUser();
     setReferrals(getReferrals(user.uid));
   }, [user.uid]);
 

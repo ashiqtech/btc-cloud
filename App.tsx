@@ -81,7 +81,7 @@ const App = () => {
         <Leaderboard />
       )}
       {currentView === AppView.TEAM && (
-        <Team user={currentUser} setView={setCurrentView} />
+        <Team user={currentUser} setView={setCurrentView} refreshUser={refreshUser} />
       )}
       {currentView === AppView.SWAP && (
         <Swap user={currentUser} refreshUser={refreshUser} setView={setCurrentView} />
