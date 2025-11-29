@@ -29,7 +29,7 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     const params = new URLSearchParams(window.location.search);
     let ref = params.get('ref');
 
-    // 2. Check Hash Path for "free/ref/CODE"
+    // 2. Check Hash Path for "cryptominerpro/ref/CODE" or "free/ref/CODE"
     if (!ref) {
         const hash = window.location.hash;
         // Regex to find /ref/CODE in the hash, case insensitive

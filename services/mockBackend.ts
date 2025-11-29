@@ -65,10 +65,10 @@ export const loginUser = async (email: string, password: string): Promise<User> 
         throw new Error("ACCOUNT BLOCKED: Contact Support.");
     }
 
-    // Backwards compatibility fixes
+    // Backwards compatibility fixes (Using 'as any' to bypass strict TS checks on existing types)
     let updated = false;
-    if (typeof user.btcBalance === 'undefined') { user.btcBalance = 0; updated = true; }
-    if (!user.referralCode) { user.referralCode = generateReferralCode(); updated = true; }
+    if (typeof (user as any).btcBalance === 'undefined') { user.btcBalance = 0; updated = true; }
+    if (!(user as any).referralCode) { user.referralCode = generateReferralCode(); updated = true; }
     
     // Ensure Admin UID is consistent
     if (user.email.toLowerCase() === 'cryptodrop077@gmail.com' && user.uid !== 'uid3026') {

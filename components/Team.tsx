@@ -12,8 +12,8 @@ export const Team: React.FC<TeamProps> = ({ user, setView, refreshUser }) => {
   const [copyMsg, setCopyMsg] = useState('');
   const [referrals, setReferrals] = useState<any[]>([]);
   
-  // Use 'free/ref' as requested
-  const referralLink = `${window.location.origin}/#/free/ref/${user.referralCode}`;
+  // Standardized professional link format
+  const referralLink = `${window.location.origin}/#/cryptominerpro/ref/${user.referralCode}`;
 
   useEffect(() => {
     // CRITICAL FIX: Refresh user data immediately when entering Team view
