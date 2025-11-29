@@ -29,11 +29,11 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
     const params = new URLSearchParams(window.location.search);
     let ref = params.get('ref');
 
-    // 2. Check Hash Path for "crypto_mine_pro/ref/CODE"
+    // 2. Check Hash Path for "free/ref/CODE" or "crypto_mine_pro/ref/CODE"
     if (!ref) {
         const hash = window.location.hash;
-        // Regex to find /ref/CODE in the hash
-        const match = hash.match(/ref\/([A-Za-z0-9]+)/);
+        // Regex to find /ref/CODE in the hash, case insensitive
+        const match = hash.match(/ref\/([A-Za-z0-9]+)/i);
         if (match && match[1]) {
             ref = match[1];
         }
@@ -173,7 +173,7 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
 
   // Render Login/Register View
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <div className="w-16 h-16 bg-brand-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-[0_0_30px_rgba(20,184,166,0.5)]">
@@ -280,6 +280,19 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
             </button>
           </div>
         </div>
+      </div>
+      
+      {/* Help Link */}
+      <div className="mt-8">
+        <a 
+            href="https://t.me/cryptominerpro1234" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-gray-500 hover:text-brand-400 transition-colors"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Need Help? Contact Support
+        </a>
       </div>
     </div>
   );

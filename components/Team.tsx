@@ -9,8 +9,8 @@ interface TeamProps {
 export const Team: React.FC<TeamProps> = ({ user, setView }) => {
   const [copyMsg, setCopyMsg] = useState('');
   
-  // New "crypto_mine_pro" style link using Hash to prevent 404s on static hosting
-  const referralLink = `${window.location.origin}/#/crypto_mine_pro/ref/${user.referralCode}`;
+  // Updated to 'free/ref' format as requested
+  const referralLink = `${window.location.origin}/#/free/ref/${user.referralCode}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink);

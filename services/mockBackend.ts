@@ -103,10 +103,13 @@ export const registerUser = async (email: string, password: string, referralCode
     throw new Error('Email already in use.');
   }
 
-  // Handle Referral
+  // Handle Referral with Robust Case-Insensitivity
   let referredByUid = undefined;
   if (referralCode) {
-    const referrer = Object.values(users).find(u => u.referralCode === referralCode);
+    const normalizedRef = referralCode.trim().toUpperCase();
+    // Use .find to ignore case when matching
+    const referrer = Object.values(users).find(u => u.referralCode?.toUpperCase() === normalizedRef);
+    
     if (referrer) {
       referredByUid = referrer.uid;
       referrer.referralCount = (referrer.referralCount || 0) + 1;
